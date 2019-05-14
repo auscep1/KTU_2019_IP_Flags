@@ -1,0 +1,26 @@
+﻿1. 
+	Darbui su matricom reikalingas includ'as MathNet.Numerics. 
+		Veiksmai:
+			Tools-> NuGet Package Manager -> Package Manager Console
+				komanda:
+				PM>	Install-Package MathNet.Numerics -Version 4.7.0 
+	Placiau, jei idomu:
+		https://numerics.mathdotnet.com/
+		https://www.nuget.org/packages/MathNet.Numerics/
+		https://numerics.mathdotnet.com/Matrix.html
+2. Program to find covariance 
+	https://www.geeksforgeeks.org/program-find-covariance/?fbclid=IwAR2AgEcdekbDsY-DO_BQu2K6xUMTcM3SiLQ8JY4SWQo9eyzg--KVjXNJ0rs
+
+3. Kovariacijų matrica 2D
+	 https://datascienceplus.com/understanding-the-covariance-matrix/
+
+
+
+
+
+
+
+
+
+
+
