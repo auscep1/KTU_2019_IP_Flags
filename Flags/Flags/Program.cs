@@ -23,8 +23,6 @@ using MathNet.Numerics.LinearAlgebra.Double;
 
 namespace Flags
 {
-
-
 	class Program
 	{
 		static Dictionary<string, int> Country = new Dictionary<string, int>();
@@ -37,79 +35,92 @@ namespace Flags
 			{"orange", "6"},
 			{"red", "7"},
 			{"white", "8"}
-		//static Dictionary<string, int> ColorReplacements = new Dictionary<string, int>
-		//{
-		//	{"black",1},
-		//	{"blue",2},
-		//	{"brown",3},
-		//	{"gold",4},
-		//	{"green",5},
-		//	{"orange",6},
-		//	{"red",7},
-		//	{"white",8}
 		};
-		static List<string> colorNo = new List<string>();
 		static void Main(string[] args)
 		{
 			string flagData = GetDataFromWeb();
 			Matrix<double> dataMatrix = ConvertToDataMatrix(flagData);
+			Matrix<double> covarianceMatrix = CovarianceMatrix(dataMatrix);
+
+			Console.WriteLine(dataMatrix.ToString());
+			Console.WriteLine(covarianceMatrix.ToString());
+
 			Console.ReadKey();
 		}
 
-		/*Function to find mean*/
-		static float Mean(float[] arr, int n)
+		/* Calculate covariance*/
+		static Matrix<double> CovarianceMatrix(Matrix<double> dataMatrix)
 		{
-			float sum = 0;
-			for (int i = 0; i < n; i++)
-				sum = sum + arr[i];
-			return sum / n;
+			Matrix<double> covarianceMatrix = Matrix<double>.Build.Dense(dataMatrix.ColumnCount, dataMatrix.ColumnCount); /*matrix 194x30*/
+			for (int i = 0; i < dataMatrix.ColumnCount - 1; i++)
+			{
+				for (int ii = i + 1; ii < dataMatrix.ColumnCount; ii++)
+				{
+					double cov = Covariance(dataMatrix.Column(i), dataMatrix.Column(ii));
+					covarianceMatrix[i, ii] = cov;
+					covarianceMatrix[ii, i] = cov;
+					covarianceMatrix[i, i] = Dispersion(dataMatrix.Column(i));
+				}
+			}
+			return covarianceMatrix;
 		}
 
-		/* Function to find covariance cov(X,Y)=1/n*SUMn((Xi-X')*(Yi-Y'))*/
-		static float Covariance(float[] arr1, float[] arr2)
+		/* Function to find covariance of two vectors*/
+		static double Covariance(Vector<double> arr1, Vector<double> arr2)
 		{
-			int arr1Length = arr1.Length;
-			int arr2Length = arr2.Length;
+			int arr1Length = arr1.Count;
+			int arr2Length = arr2.Count;
 			if (arr1Length == arr2Length)
 			{
-				float sum = 0;
+				double mean1 = arr1.Average();
+				double mean2 = arr2.Average();
+				double sum = 0;
 				for (int i = 0; i < arr1Length; i++)
-					sum = sum + (arr1[i] - Mean(arr1, arr1Length)) * (arr2[i] - Mean(arr2, arr1Length));
+					sum = sum + (arr1[i] - mean1) * (arr2[i] - mean2);
 				return sum / (arr1Length - 1);
 			}
 			else return 0;
-			// Console.WriteLine(Covariance(arr1, arr2, m));
 		}
 
-		/* 
-		 * Get data matrix:
-		 * replace country name to index;
-		 * replace color to color number
-		*/
-		private static Matrix<double> ConvertToDataMatrix(string flagData)
+		/* Function to find dispersion of vector*/
+		static double Dispersion(Vector<double> arr)
 		{
-			int countryCounter = 0;
-			List<string> arrLines = flagData.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries).ToList();
-			Matrix<double> dataMatrix = Matrix<double>.Build.Dense(arrLines.Count, 30);
-			foreach (string line in arrLines)
-			{
-				string newLine = Regex.Replace(line, string.Join("|", ColorReplacements.Keys.Select(k => k.ToString()).ToArray()), m => ColorReplacements[m.Value]); /*replace color to number*/
-				string[] arr = newLine.Split(',').ToArray();
-				Country.Add(arr[0], countryCounter); /*add country to dictionary: key=country, value=number*/
-				arr[0] = countryCounter.ToString(); /*replace country to number*/
-				dataMatrix.SetRow(countryCounter, Array.ConvertAll(arr, double.Parse)); /*parse from string to to int array and add to matrix row*/
-				countryCounter++;
-			}
-			Console.WriteLine(dataMatrix.ToString());
-			return dataMatrix;
+			int arrLength = arr.Count;
+			double mean = arr.Average();
+			double sum = 0;
+			for (int i = 0; i < arrLength; i++)
+				sum = sum + Math.Pow((arr[i] - mean),2);
+			return sum / (arrLength - 1);
 		}
 
-		/*Get flag data from web*/
-		static string GetDataFromWeb()
+	/* 
+	 * Get data matrix:
+	 * replace country name to index;
+	 * replace color to color number
+	*/
+	private static Matrix<double> ConvertToDataMatrix(string flagData)
+	{
+		int countryCounter = 0;
+		List<string> arrLines = flagData.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries).ToList();
+		Matrix<double> dataMatrix = Matrix<double>.Build.Dense(arrLines.Count, 30); /*matrix 194x30*/
+		foreach (string line in arrLines)
 		{
-			WebClient client = new WebClient();
-			string flagData = client.DownloadString("https://archive.ics.uci.edu/ml/machine-learning-databases/flags/flag.data");
-			return flagData;
+			string newLine = Regex.Replace(line, string.Join("|", ColorReplacements.Keys.Select(k => k.ToString()).ToArray()), m => ColorReplacements[m.Value]); /*replace color to number*/
+			string[] arr = newLine.Split(',').ToArray();
+			Country.Add(arr[0], countryCounter); /*add country to dictionary: key=country, value=number*/
+			arr[0] = countryCounter.ToString(); /*replace country to number*/
+			dataMatrix.SetRow(countryCounter, Array.ConvertAll(arr, double.Parse)); /*parse from string to to int array and add to matrix row*/
+			countryCounter++;
 		}
+		return dataMatrix;
 	}
+
+	/*Get flag data from web*/
+	static string GetDataFromWeb()
+	{
+		WebClient client = new WebClient();
+		string flagData = client.DownloadString("https://archive.ics.uci.edu/ml/machine-learning-databases/flags/flag.data");
+		return flagData;
+	}
+}
 }
