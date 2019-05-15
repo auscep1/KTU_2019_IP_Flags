@@ -39,8 +39,10 @@ namespace Flags
 		static void Main(string[] args)
 		{
 			string flagData = GetDataFromWeb();
-			Matrix<double> dataMatrix = ConvertToDataMatrix(flagData);
-			Matrix<double> covarianceMatrix = CovarianceMatrix(dataMatrix);
+			Matrix<double> dataMatrix = ConvertToDataMatrix(flagData); 
+			Matrix<double> dataMatrixWithoutSunstar = dataMatrix.RemoveColumn(22); /*without sunstar attribute*/
+
+			Matrix<double> covarianceMatrix = CovarianceMatrix(dataMatrixWithoutSunstar);
 
 			Console.WriteLine(dataMatrix.ToString());
 			Console.WriteLine(covarianceMatrix.ToString());
