@@ -1,0 +1,29 @@
+			//Vector<double> averageMatrix = AverageOfDataSet(dataMatrix);
+			//Matrix<double> dataMatrixMoved = SubtractDataSetFromAverage(dataMatrix, averageMatrix);
+				
+	//Console.WriteLine(averageMatrix.ToString());
+			//Console.WriteLine(dataMatrixMoved.ToString());
+	
+
+	/* Substract data set from average (cell-average)*/
+		static Matrix<double> SubtractDataSetFromAverage(Matrix<double> dataMatrix, Vector<double> averageMatrix)
+		{
+			Matrix<double> dataMatrixMoved = Matrix<double>.Build.Dense(dataMatrix.RowCount, dataMatrix.ColumnCount); /*matrix 194x30*/
+			for (int i = 0; i < dataMatrix.RowCount; i++)
+			{
+				var add = dataMatrix.Row(i).Subtract(averageMatrix);
+				dataMatrixMoved.SetRow(i, add);
+			}
+			return dataMatrixMoved;
+		}
+
+		/* Calculate average of each data set (atribute- matrix column) and return vector*/
+		static Vector<double> AverageOfDataSet(Matrix<double> dataMatrix)
+		{
+			Vector<double> dataMatrixAverage = Vector<double>.Build.Dense(dataMatrix.ColumnCount); /*matrix 194x1*/
+			for (int i = 0; i < dataMatrix.ColumnCount; i++)
+			{
+				dataMatrixAverage[i] = dataMatrix.Column(i).Average();
+			}
+			return dataMatrixAverage;
+		}

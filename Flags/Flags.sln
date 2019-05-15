@@ -5,6 +5,11 @@ VisualStudioVersion = 15.0.28010.2019
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flags", "Flags\Flags.csproj", "{29521B24-16ED-4895-ACC1-F123A920E581}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{98FC9718-770A-4491-A695-DED08C209C3E}"
+	ProjectSection(SolutionItems) = preProject
+		auscep1_laikinas.txt = auscep1_laikinas.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

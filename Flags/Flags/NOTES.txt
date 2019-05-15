@@ -13,6 +13,7 @@
 
 3. Kovariacijų matrica 2D
 	 https://datascienceplus.com/understanding-the-covariance-matrix/
+	http://www.cs.otago.ac.nz/cosc453/student_tutorials/principal_components.pdf
 
 
 
