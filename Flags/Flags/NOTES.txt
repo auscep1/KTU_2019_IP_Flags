@@ -15,6 +15,12 @@
 	 https://datascienceplus.com/understanding-the-covariance-matrix/
 	http://www.cs.otago.ac.nz/cosc453/student_tutorials/principal_components.pdf
 
+4. Kov. ir PCA gera literatura:
+	http://www.cs.otago.ac.nz/cosc453/student_tutorials/principal_components.pdf
+
+5. Data min-max nimalization:
+	https://t4tutorials.com/min-max-normalization-of-data-in-data-mining/
+
 
 
 
