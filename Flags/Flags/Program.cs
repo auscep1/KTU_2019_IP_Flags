@@ -36,11 +36,44 @@ namespace Flags
 			{"red", "7"},
 			{"white", "8"}
 		};
+		static Dictionary<double, string> Attributes = new Dictionary<double, string> {
+			{0, "name"},
+			{1, "landmass"},
+			{2, "zone"},
+			{3, "area"},
+			{4, "population"},
+			{5, "language"},
+			{6, "religion"},
+			{7, "bars"},
+			{8, "stripes"},
+			{9, "colours"},
+			{10, "red"},
+			{11, "green"},
+			{12, "blue"},
+			{13, "gold"},
+			{14, "white"},
+			{15, "black"},
+			{16, "orange"},
+			{17, "mainhue"},
+			{18, "circles"},
+			{19, "crosses"},
+			{20, "saltires"},
+			{21, "quarters"},
+			{22, "sunstars"},
+			{23, "crescent"},
+			{24, "triangle"},
+			{25, "icon"},
+			{26, "animate"},
+			{27, "text"},
+			{28, "topleft"},
+			{29, "botright"}
+		};
+
 		static void Main(string[] args)
 		{
 			string flagData = GetDataFromWeb();
 			Matrix<double> dataMatrix = ConvertToDataMatrix(flagData);
-			Matrix<double> dataMatrixNormalized = DataNormalization(dataMatrix).RemoveColumn(0); /*and remove country column*/
+			Matrix<double> dataMatrixNormalized = DataNormalization(dataMatrix);
 			Matrix<double> covarianceMatrix = CovarianceMatrix(dataMatrixNormalized);
 
 			Dictionary<double, double> covarianceSunStarSorted = SortedSunsetCovariation(covarianceMatrix);
@@ -77,7 +110,7 @@ namespace Flags
 			Console.Write("Attributes in use: ");
 			foreach (KeyValuePair<double, double> kvp in sortedByMostReflectAttributes)
 			{
-				Console.Write("\t" + kvp.Key);
+				Console.Write("\t" + kvp.Key+"-"+ Attributes[kvp.Key]);
 				dataMatrixReduced.SetColumn(counter, dataMatrixNormalized.Column((int)kvp.Key));
 				counter++;
 				if (counter >= dimensionsQuantity+1)
@@ -98,7 +131,7 @@ namespace Flags
 			}
 			covarianceSunStarSortedAbs= covarianceSunStarSortedAbs.OrderByDescending(x => x.Value).ToDictionary(pair => pair.Key, pair => pair.Value);
 			//var sortedDict = (from x in covarianceSunStarSortedAbs orderby x.Value descending select x).ToDictionary(pair => pair.Key, pair => pair.Value);
-			return covarianceSunStarSorted;
+			return covarianceSunStarSortedAbs;
 		}
 
 		/*Get soreted by most reflect to sunset attributes: Return dictionary <real index of attribute , sorted probabilities>*/
