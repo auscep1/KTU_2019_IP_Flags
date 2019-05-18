@@ -33,7 +33,7 @@ namespace WindowsFormsApp1
 				Fx.Points[index].MarkerStyle = MarkerStyle.Circle;
 				Fx.Points[index].MarkerSize = 8;
 				Fx.Points[index].MarkerColor = Color.Red;
-				Fx.Points[index].Label = "#VALY{$#.##}" + " % ";
+				Fx.Points[index].Label = "#VALY{#.##}" + " % ";
 				//Fx.Points[index].AxisLabel = "#VAL \n #PERCENT";
 				index++;
 			}

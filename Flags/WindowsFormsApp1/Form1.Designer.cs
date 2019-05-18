@@ -40,12 +40,15 @@ namespace WindowsFormsApp1
 			// chart1
 			// 
 			chartArea1.Name = "ChartArea1";
+			chartArea1.AxisX.Title = "Atributų skaičius";
+			chartArea1.AxisY.Title = "Tikslumas";
 			this.chart1.ChartAreas.Add(chartArea1);
 			legend1.Docking = System.Windows.Forms.DataVisualization.Charting.Docking.Bottom;
 			legend1.Name = "Legend1";
 			this.chart1.Legends.Add(legend1);
 			this.chart1.Location = new System.Drawing.Point(13, 13);
 			this.chart1.Name = "chart1";
+			this.chart1.Titles.Add("Klasifikatoriaus tikslumas").Font = new System.Drawing.Font("Arial", 16, FontStyle.Bold); ;
 			series1.ChartArea = "ChartArea1";
 			series1.Legend = "Legend1";
 			series1.Name = "Series1";
