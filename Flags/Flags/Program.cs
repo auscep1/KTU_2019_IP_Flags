@@ -107,10 +107,10 @@ namespace Flags
 			Console.WriteLine("Covariance of Sunstar sorted attribute: \n\r" + String.Join("\n\r ", covarianceSunStarSorted));
 			Console.WriteLine("Covariance of Sunstar sorted by most reflected attributes: \n\r" + String.Join("\n\r ", sortedByMostReflectAttributes));
 
-			List<Tuple<double, double, double>> bestResults = new List<Tuple<double, double, double>>();
+			List<Tuple<double, double, double>> bestResultskNN = new List<Tuple<double, double, double>>();
 			/*sortedByMostReflectAttributes key should be used for attributes selecion*/
 			/*experiments of clasificator starts:*/
-			for (int i = NUMBER_OF_SEGMENTS; i < 26; i++)
+			while (NUMBER_OF_SEGMENTS < 26)
 			{
 				List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
 				double dimensionsQuantity = dataMatrixNormalized.ColumnCount - 1; /* experiments for clasificator*/
@@ -129,10 +129,11 @@ namespace Flags
 					int testElementsCount = dataMatrixReduced.RowCount / NUMBER_OF_SEGMENTS;
 					// Cross-Validation
 					accuracyCross = 0;
+					/*kNN*/
 					for (int iterationID = 0; iterationID < NUMBER_OF_SEGMENTS; iterationID++)
 					{
 						// Skaiciuoja kiekvienos iteracijos tiksluma kNN metodu
-						double accuracykNN = Accuracy(dataMatrixReduced, iterationID, testElementsCount, (int)dimensionsQuantity);
+						double accuracykNN = AccuracykNN(dataMatrixReduced, iterationID, testElementsCount, (int)dimensionsQuantity);
 						accuracyCross += accuracykNN;
 						matrixForChart[(int)dimensionsQuantity - 2, iterationID] = accuracykNN;
 					}
@@ -148,13 +149,13 @@ namespace Flags
 					matrixForChart[(int)dimensionsQuantity - 2, row - 1] = accuracyCross;
 					dimensionsQuantity--;
 				}
-				bestResults.Add(new Tuple<double, double, double>(NUMBER_OF_SEGMENTS, bestQuantityOfAttributes, bestAccuracy));
+				bestResultskNN.Add(new Tuple<double, double, double>(NUMBER_OF_SEGMENTS, bestQuantityOfAttributes, bestAccuracy));
+
 				DrawChart(xy);
 				DrawChart(matrixForChart, dimensions);
 				NUMBER_OF_SEGMENTS += 5;
-				i = NUMBER_OF_SEGMENTS - 1;
 			}
-			Bests(bestResults);
+			Bests(bestResultskNN);
 			Console.ReadKey();
 		}
 
@@ -181,7 +182,7 @@ namespace Flags
 		}
 
 		/*Acurracy: quantity of Correct/ quantity of all Tested results %*/
-		private static double Accuracy(Matrix<double> dataMatrixReduced, int iterationID, int testElementsCount, int dimensionsQuantity)
+		private static double AccuracykNN(Matrix<double> dataMatrixReduced, int iterationID, int testElementsCount, int dimensionsQuantity)
 		{
 			double correct = 0;
 			double tested = 0;
