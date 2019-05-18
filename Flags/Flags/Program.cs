@@ -25,9 +25,10 @@ namespace Flags
 	class Program
 	{
 		#region Options
-		const int NUMBER_OF_SEGMENTS = 5; // cross-validation segments counts
+		//const int NUMBER_OF_SEGMENTS = 5; // cross-validation segments counts
 		const int NUMBER_OF_NEIGHBOURS = 3;
 		#endregion
+		static int NUMBER_OF_SEGMENTS = 5; // cross-validation segments counts
 
 
 		static Dictionary<string, int> Country = new Dictionary<string, int>();
@@ -90,6 +91,8 @@ namespace Flags
 		[STAThread]
 		static void Main(string[] args)
 		{
+			Application.EnableVisualStyles();
+			Application.SetCompatibleTextRenderingDefault(false);
 			string flagData = GetDataFromWeb();
 			Matrix<double> dataMatrix = ConvertToDataMatrix(flagData);
 			Matrix<double> dataMatrixNormalized = DataNormalization(dataMatrix);
@@ -104,41 +107,77 @@ namespace Flags
 			Console.WriteLine("Covariance of Sunstar sorted attribute: \n\r" + String.Join("\n\r ", covarianceSunStarSorted));
 			Console.WriteLine("Covariance of Sunstar sorted by most reflected attributes: \n\r" + String.Join("\n\r ", sortedByMostReflectAttributes));
 
+			List<Tuple<double, double, double>> bestResults = new List<Tuple<double, double, double>>();
 			/*sortedByMostReflectAttributes key should be used for attributes selecion*/
 			/*experiments of clasificator starts:*/
-			List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
-			double dimensionsQuantity = dataMatrixNormalized.ColumnCount - 1; /* experiments for clasificator*/
-			int row = (int)NUMBER_OF_SEGMENTS + 1;
-			int col = (int)dimensionsQuantity - 1;
-			double[,] matrixForChart = new double[col, row];
-			List<double> dimensions = new List<double>();
-			double accuracyCross = 0;
-
-			Console.WriteLine(String.Format("\t{0,-15}\t{1,-15}\t{2,-15}\t{3,-15}\t","METHOD", "ITERATION", "ATTRIBUTES", "ACCURACY"));
-			while (dimensionsQuantity > 1)
+			for (int i = NUMBER_OF_SEGMENTS; i < 26; i++)
 			{
-				Matrix<double> dataMatrixReduced = GetReducedMatrix(dataMatrixNormalized, dimensionsQuantity, sortedByMostReflectAttributes);
-				int testElementsCount = dataMatrixReduced.RowCount / NUMBER_OF_SEGMENTS;
-				// Cross-Validation
-				accuracyCross = 0;
-				for (int iterationID = 0; iterationID < NUMBER_OF_SEGMENTS; iterationID++)
-				{
-					// Skaiciuoja kiekvienos iteracijos tiksluma kNN metodu
-					double accuracykNN = Accuracy(dataMatrixReduced, iterationID, testElementsCount, (int)dimensionsQuantity);
-					accuracyCross += accuracykNN;
-					matrixForChart[(int)dimensionsQuantity - 2, iterationID] = accuracykNN;
-				}
-				accuracyCross = accuracyCross / NUMBER_OF_SEGMENTS;
-				// pridedam visos kryzmines patikros tiksluma
-				xy.Add(new Tuple<double, double>(dimensionsQuantity, accuracyCross));
-				dimensions.Add(dimensionsQuantity);
-				matrixForChart[(int)dimensionsQuantity - 2, row - 1] = accuracyCross;
-				dimensionsQuantity--;
-			}
+				List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
+				double dimensionsQuantity = dataMatrixNormalized.ColumnCount - 1; /* experiments for clasificator*/
+				int row = (int)NUMBER_OF_SEGMENTS + 1;
+				int col = (int)dimensionsQuantity - 1;
+				double[,] matrixForChart = new double[col, row];
+				List<double> dimensions = new List<double>();
+				double accuracyCross = 0;
+				double bestAccuracy = 0;
+				double bestQuantityOfAttributes = 0;
+				Console.WriteLine(String.Format("\t{0,-15}\t{1,-15}\t{2,-15}\t{3,-15}\t{4,-15}\t", "SEGMENT" + NUMBER_OF_SEGMENTS, "METHOD", "ITERATION", "ATTRIBUTES", "ACCURACY"));
 
-			DrawChart(xy);
-			DrawChart(matrixForChart, dimensions);
+				while (dimensionsQuantity > 1)
+				{
+					Matrix<double> dataMatrixReduced = GetReducedMatrix(dataMatrixNormalized, dimensionsQuantity, sortedByMostReflectAttributes);
+					int testElementsCount = dataMatrixReduced.RowCount / NUMBER_OF_SEGMENTS;
+					// Cross-Validation
+					accuracyCross = 0;
+					for (int iterationID = 0; iterationID < NUMBER_OF_SEGMENTS; iterationID++)
+					{
+						// Skaiciuoja kiekvienos iteracijos tiksluma kNN metodu
+						double accuracykNN = Accuracy(dataMatrixReduced, iterationID, testElementsCount, (int)dimensionsQuantity);
+						accuracyCross += accuracykNN;
+						matrixForChart[(int)dimensionsQuantity - 2, iterationID] = accuracykNN;
+					}
+					accuracyCross = accuracyCross / NUMBER_OF_SEGMENTS;
+					if (bestAccuracy <= accuracyCross)
+					{
+						bestAccuracy = accuracyCross;
+						bestQuantityOfAttributes = dimensionsQuantity;
+					}
+					// pridedam visos kryzmines patikros tiksluma
+					xy.Add(new Tuple<double, double>(dimensionsQuantity, accuracyCross));
+					dimensions.Add(dimensionsQuantity);
+					matrixForChart[(int)dimensionsQuantity - 2, row - 1] = accuracyCross;
+					dimensionsQuantity--;
+				}
+				bestResults.Add(new Tuple<double, double, double>(NUMBER_OF_SEGMENTS, bestQuantityOfAttributes, bestAccuracy));
+				DrawChart(xy);
+				DrawChart(matrixForChart, dimensions);
+				NUMBER_OF_SEGMENTS += 5;
+				i = NUMBER_OF_SEGMENTS - 1;
+			}
+			Bests(bestResults);
 			Console.ReadKey();
+		}
+
+		/*Print best results*/
+		private static void Bests(List<Tuple<double, double, double>> bestResults)
+		{
+			Console.ForegroundColor = ConsoleColor.Yellow;
+			Console.WriteLine("Best results:");
+			Console.WriteLine("\t{0,-15}\t{1,-15}\t{2,-15:0.00}\t", "SEGMENT", "ATTRIBUTES", "ACCURACY");
+			double bestSegment = 0, bestAttributes = 0, bestAcuracy = 0;
+			foreach (Tuple<double, double, double> t in bestResults)
+			{
+				Console.WriteLine("\t{0,-15}\t{1,-15}\t{2,-15:0.00}\t", t.Item1, t.Item2, t.Item3);
+				if (bestAcuracy < t.Item3)
+				{
+					bestSegment = t.Item1;
+					bestAttributes = t.Item2;
+					bestAcuracy = t.Item3;
+				}
+			}
+			Console.ForegroundColor = ConsoleColor.Magenta;
+			Console.WriteLine("The best\n\r\t{0,-15}\t{1,-15}\t{2,-15:0.00}\t", bestSegment, bestAttributes, bestAcuracy);
+			Console.ForegroundColor = ConsoleColor.White;
 		}
 
 		/*Acurracy: quantity of Correct/ quantity of all Tested results %*/
@@ -146,11 +185,8 @@ namespace Flags
 		{
 			double correct = 0;
 			double tested = 0;
-			//Console.WriteLine("/////////////////////////////////////////////");
-		//	Console.WriteLine("Iteration: {0}, Number of Arguments: {1}", iterationID + 1, dimensionsQuantity);
 			// Add training data to kNN, without last element
 			kNN trainkNN = kNN.initialiseKNN(NUMBER_OF_NEIGHBOURS, dataMatrixReduced, (int)dimensionsQuantity, testElementsCount, iterationID);
-
 			// Get testing data and sunStar values
 			double[][] allItems = dataMatrixReduced.ToRowArrays();
 			for (int i = iterationID * testElementsCount; i < (iterationID + 1) * testElementsCount; i++)
@@ -158,7 +194,6 @@ namespace Flags
 				List<double> testingSet = allItems[i].ToList();
 				double actualValue = (int)testingSet[0];
 				testingSet.RemoveAt(0);
-
 				// Test that element
 				string result = trainkNN.Classify(testingSet);
 				if (double.Parse(result) == actualValue)
@@ -168,23 +203,18 @@ namespace Flags
 				tested++;
 			}
 			double accuracy = correct / tested * 100;
-			//Console.WriteLine("Accuracy of this iteration: {0}", accuracy);
-			Console.WriteLine(String.Format("\t{3,-15}\t{0,-15}\t{1,-15}\t{2,-15:0.00}", iterationID + 1, dimensionsQuantity, accuracy, "kNN"));
+			Console.WriteLine(String.Format("\t{0,-15}\t{1,-15}\t{2,-15}\t{3,-15}\t{4,-15:0.00}", NUMBER_OF_SEGMENTS, "kNN", iterationID + 1, dimensionsQuantity, accuracy));
 			return accuracy;
 		}
 
 		/*Draw accuracy chart*/
 		static void DrawChart(List<Tuple<double, double>> xy)
 		{
-			Application.EnableVisualStyles();
-			Application.SetCompatibleTextRenderingDefault(false);
-			Application.Run(new Form1(xy));
+			Application.Run(new Form1(xy, NUMBER_OF_SEGMENTS));
 		}
 		/*Draw accuracy chart*/
 		static void DrawChart(double[,] matrixForChart, List<double> dimensions)
 		{
-			//Application.EnableVisualStyles();
-			//Application.SetCompatibleTextRenderingDefault(false);
 			Application.Run(new Form1(matrixForChart, dimensions));
 		}
 
