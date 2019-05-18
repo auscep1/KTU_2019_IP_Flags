@@ -18,12 +18,13 @@ namespace WindowsFormsApp1
 			InitializeComponent();
 		}
 		Series Fx;
-		public Form1(List<Tuple<double, double>> XY)
+		public Form1(List<Tuple<double, double>> XY, int iterations)
 		{
 			InitializeComponent();
 			ClearForm();
 			PreparareForm(0, 30, 0, 100);
 			Fx = chart1.Series.Add("Tikslumas");
+			chart1.Titles.Add(string.Format("Kryžminė patikra, kai iteracijų {0}", iterations)).Font = new System.Drawing.Font("Arial", 16, FontStyle.Bold);
 			Fx.ChartType = SeriesChartType.Line;
 			Fx.IsValueShownAsLabel = true;
 			int index = 0;
