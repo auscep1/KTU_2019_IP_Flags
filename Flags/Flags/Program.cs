@@ -101,8 +101,6 @@ namespace Flags
 			/*sortedByMostReflectAttributes key should be used for attributes selecion*/
 			/*experiments of clasificator starts:*/
 			List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
-			Application.EnableVisualStyles();
-			Application.SetCompatibleTextRenderingDefault(false);
 
 			double dimensionsQuantity = dataMatrixNormalized.ColumnCount-1; /* experiments for clasificator*/
 			double accurancy = 0;
@@ -117,9 +115,16 @@ namespace Flags
 				dimensionsQuantity--;
 				Console.WriteLine("Reduced Data matrix: \n\r" +  dataMatrixReduced.ToString());
 			}
-			Application.Run(new Form1(xy));
-
+			DrawChart(xy);
 			Console.ReadKey();
+		}
+
+		/*Draw accurancy chart*/
+		static void DrawChart(List<Tuple<double, double>> xy)
+		{
+			Application.EnableVisualStyles();
+			Application.SetCompatibleTextRenderingDefault(false);
+			Application.Run(new Form1(xy));
 		}
 
 		/*Get dimensions reduced matrix*/
