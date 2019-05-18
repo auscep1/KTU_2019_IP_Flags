@@ -24,6 +24,12 @@ namespace Flags
 {
 	class Program
 	{
+		#region Options
+		const int NUMBER_OF_SEGMENTS = 5; // cross-validation segments counts
+		const int NUMBER_OF_NEIGHBOURS = 3;
+		#endregion
+
+
 		static Dictionary<string, int> Country = new Dictionary<string, int>();
 		static Dictionary<string, string> ColorReplacements = new Dictionary<string, string> {
 			{"black", "1"},
@@ -108,12 +114,36 @@ namespace Flags
 			{
 				Matrix<double> dataMatrixReduced = GetReducedMatrix(dataMatrixNormalized, dimensionsQuantity, sortedByMostReflectAttributes);
 
+				Console.WriteLine("////////////////////////////////////////////////////");
+				int testElementsCount = 10;
+
 				/*clasifikatorius, experimentai, kryzmine patikra...*/
+				// Add training data to kNN, without last element
+				kNN trainkNN = kNN.initialiseKNN(NUMBER_OF_NEIGHBOURS, dataMatrixReduced, dimensionsQuantity, testElementsCount);
+
+				// Get last element of the array and its sunStar value
+				double[][] allItems = dataMatrixReduced.ToRowArrays();
+				List<double> trainingSet = new List<double>();
+				for (int i = 1; i <= testElementsCount; i++)
+				{ 
+					// Get training element
+					trainingSet = allItems[allItems.Length - i].ToList();
+					int actualValue = (int)trainingSet[0];
+					trainingSet.RemoveAt(0);
+
+					// Test that element
+					string result = trainkNN.Classify(trainingSet);
+
+					// Result
+					Console.WriteLine("This instance is classified as: {0} , actual value: {1}", result, actualValue);
+				}
 
 				accurancy = 1 / dimensionsQuantity * 100; /* priskirti klasifikatoriaus tiksluma*/
 				xy.Add(new Tuple<double,double>(dimensionsQuantity, accurancy));
 				dimensionsQuantity--;
-				Console.WriteLine("Reduced Data matrix: \n\r" +  dataMatrixReduced.ToString());
+				//Console.WriteLine("Reduced Data matrix: \n\r" +  dataMatrixReduced.ToString());
+
+				Console.WriteLine("////////////////////////////////////////////////////");
 			}
 			DrawChart(xy);
 			Console.ReadKey();
@@ -292,6 +322,177 @@ namespace Flags
 			WebClient client = new WebClient();
 			string flagData = client.DownloadString("https://archive.ics.uci.edu/ml/machine-learning-databases/flags/flag.data");
 			return flagData;
+		}
+
+
+	}
+
+	// //////////////////////////////////////////////////////////////////////////////////
+	///										kNN stuff								  ///
+	// //////////////////////////////////////////////////////////////////////////////////
+
+	public sealed class kNN
+	{
+		//private constructor allows to ensure k is odd
+		private kNN(int K, Matrix<double> data, int argumentsNumber, int testCount)
+		{
+			k = K;
+			PopulateDataSetFromGivenData(data, argumentsNumber, testCount);
+		}
+
+		/// <summary>
+		/// Initialises the kNN class, the observations data set and the number of neighbors to use in voting when classifying
+		/// </summary>
+		/// <param name="K">integer representiong the number of neighbors to use in the classifying instances</param>
+		/// <param name="FileName">string file name containing knows numeric observations with string classes</param>
+		/// <param name="Normalise">boolean flag for normalising the data set</param>
+		public static kNN initialiseKNN(int K, Matrix<double> data, int argumentsNumber, int testCount)
+		{
+			if (K % 2 > 0)
+				return new kNN(K, data, argumentsNumber, testCount);
+			else
+			{
+				Console.WriteLine("K must be odd.");
+				return null;
+			}
+		}
+
+		//read-only properties
+		internal int K { get { return k; } }
+		internal Dictionary<List<double>, int> DataSet { get { return dataSet; } }
+
+		/// <summary>
+		/// Classifies the instance according to a kNN algorithm
+		/// calculates Eucledian distance between the instance and the know data
+		/// </summary>
+		internal string Classify(List<double> instance)
+		{
+			double[] normalisedInstance = new double[length];
+			normalisedInstance = instance.ToArray<double>();
+
+			if (instance.Count != length)
+			{
+				Console.WriteLine("Length: " + length);
+				return "Wrong number of instance parameters. Instance count: " + instance.Count.ToString();
+			}
+
+			double[,] keyValue = dataSet.Keys.ToMatrix(depth, length);
+			double[] distances = new double[depth];
+
+			Dictionary<double, string> distDictionary = new Dictionary<double, string>();
+			for (int i = 0; i < depth; i++)
+			{
+				distances[i] = Math.Sqrt(keyValue.Row(i).Zip(normalisedInstance, (one, two) => (one - two) * (one - two)).ToArray().Sum());
+				if(!distDictionary.ContainsKey(distances[i]))
+					distDictionary.Add(distances[i], dataSet.Values.ToArray()[i].ToString());
+			}
+
+			//select top votes
+			var topK = (from d in distDictionary.Keys
+						orderby d ascending
+						select d).Take(k).ToArray();
+
+			//obtain the corresponding classifications for the top votes
+			var result = (from d in distDictionary
+						  from t in topK
+						  where d.Key == t
+						  select d.Value).ToArray();
+
+			return result.Majority();
+		}
+
+		/// <summary>
+		/// Processess the  training data and populates the dictionary
+		/// </summary>
+		private void PopulateDataSetFromGivenData(Matrix<double> data, int argumentsNumber, int testCount)
+		{
+			double[][] allItems = data.ToRowArrays();
+			depth = allItems.Length - testCount;
+			length = argumentsNumber;
+
+			if (allItems != null)
+			{
+				for (int i = 0; i < allItems.Length-testCount; i++)
+				{
+					List<double> temp = allItems[i].ToList();
+					temp.RemoveAt(0);
+					if(temp.Count == length)
+						dataSet.Add(temp, (int)allItems[i][0]);
+				}
+			}
+			else
+				Console.WriteLine("No items in the data set");
+		
+		}
+
+
+		//private members
+		private Dictionary<List<double>, int> dataSet = new Dictionary<List<double>, int>();
+		//private List<double> trainingSet = new List<double>();
+		private int k = 3;
+		private int length = 0;
+		private int depth = 0;
+	}
+
+	public static class Extensions
+	{
+		//converts string representation of number to a double
+		public static IEnumerable<double> ConvertToDouble<T>(this IEnumerable<T> array)
+		{
+			dynamic ds;
+			foreach (object st in array)
+			{
+				ds = st;
+				yield return Convert.ToDouble(ds);
+			}
+		}
+
+		//returns a row in a 2D array
+		public static T[] Row<T>(this T[,] array, int r)
+		{
+			T[] output = new T[array.GetLength(1)];
+			if (r < array.GetLength(0))
+			{
+				for (int i = 0; i < array.GetLength(1); i++)
+					output[i] = array[r, i];
+			}
+			return output;
+		}
+
+		//converts a List of Lists to a 2D matrix
+		public static T[,] ToMatrix<T>(this IEnumerable<List<T>> collection, int depth, int length)
+		{
+			T[,] output = new T[depth, length];
+			int i = 0, j = 0;
+			foreach (var list in collection)
+			{
+				foreach (var val in list)
+				{
+					output[i, j] = val;
+					j++;
+				}
+				i++; j = 0;
+			}
+
+			return output;
+		}
+
+		//returns the classification that appears most frequently in the array of classifications
+		public static string Majority<T>(this T[] array)
+		{
+			if (array.Length > 0)
+			{
+				int unique = array.Distinct().Count();
+				if (unique == 1)
+					return array[0].ToString();
+
+				return (from item in array
+						group item by item into g
+						orderby g.Count() descending
+						select g.Key).First().ToString();
+			}
+			else
+				return "";
 		}
 	}
 }
