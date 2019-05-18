@@ -110,6 +110,8 @@ namespace Flags
 
 			double dimensionsQuantity = dataMatrixNormalized.ColumnCount-1; /* experiments for clasificator*/
 			double accurancy = 0;
+			double correct = 0;
+			double tested = 0;
 			while (dimensionsQuantity>1)
 			{
 				Matrix<double> dataMatrixReduced = GetReducedMatrix(dataMatrixNormalized, dimensionsQuantity, sortedByMostReflectAttributes);
@@ -119,7 +121,7 @@ namespace Flags
 
 				/*clasifikatorius, experimentai, kryzmine patikra...*/
 				// Add training data to kNN, without last element
-				kNN trainkNN = kNN.initialiseKNN(NUMBER_OF_NEIGHBOURS, dataMatrixReduced, dimensionsQuantity, testElementsCount);
+				kNN trainkNN = kNN.initialiseKNN(NUMBER_OF_NEIGHBOURS, dataMatrixReduced,(int) dimensionsQuantity, testElementsCount);
 
 				// Get last element of the array and its sunStar value
 				double[][] allItems = dataMatrixReduced.ToRowArrays();
@@ -133,17 +135,23 @@ namespace Flags
 
 					// Test that element
 					string result = trainkNN.Classify(trainingSet);
-
+					if (double.Parse(result) == actualValue)
+					{
+						correct++;
+					}
+					tested++;
 					// Result
 					Console.WriteLine("This instance is classified as: {0} , actual value: {1}", result, actualValue);
 				}
 
-				accurancy = 1 / dimensionsQuantity * 100; /* priskirti klasifikatoriaus tiksluma*/
+				accurancy = correct/tested * 100; /* priskirti klasifikatoriaus tiksluma*/
 				xy.Add(new Tuple<double,double>(dimensionsQuantity, accurancy));
 				dimensionsQuantity--;
 				//Console.WriteLine("Reduced Data matrix: \n\r" +  dataMatrixReduced.ToString());
 
 				Console.WriteLine("////////////////////////////////////////////////////");
+				correct = 0;
+				tested = 0;
 			}
 			DrawChart(xy);
 			Console.ReadKey();
