@@ -15,11 +15,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using MathNet.Numerics.LinearAlgebra;
-using MathNet.Numerics.LinearAlgebra.Double;
+using WindowsFormsApp1;
+using System.Windows.Forms;
 
 namespace Flags
 {
@@ -74,6 +73,20 @@ namespace Flags
 			{28, "topleft"},
 			{29, "botright"}
 		};
+		/*group a area attribute values*/
+		static Dictionary<double, double> Attr3AreaGroups = new Dictionary<double, double> {
+			{3,10000}, /*>10000*/
+			{2,1000}, /*1000-10000*/
+			{1,100}, /*100-1000*/
+			{0,0} /*0-100*/
+		};
+		/*group a population attribute values*/
+		static Dictionary<double, double> Attr4PopulationGroups = new Dictionary<double, double> {
+			{3,1000}, /*>1000*/
+			{2,100}, /*100-1000*/
+			{1,10}, /*10-100*/
+			{0,0} /*0-10*/
+		};
 
 		static void Main(string[] args)
 		{
@@ -93,13 +106,17 @@ namespace Flags
 
 			/*sortedByMostReflectAttributes key should be used for attributes selecion*/
 			/*experiments of clasificator starts:*/
-			int dimensionsQuantity = dataMatrixNormalized.ColumnCount-1; /* experiments for clasificator*/
-			while(dimensionsQuantity>1)
+			List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
+
+			double dimensionsQuantity = dataMatrixNormalized.ColumnCount-1; /* experiments for clasificator*/
+			double accurancy = 0;
+			while (dimensionsQuantity>1)
 			{
 				Matrix<double> dataMatrixReduced = GetReducedMatrix(dataMatrixNormalized, dimensionsQuantity, sortedByMostReflectAttributes);
 
 				Console.WriteLine("////////////////////////////////////////////////////");
 				int testElementsCount = 10;
+
 				/*clasifikatorius, experimentai, kryzmine patikra...*/
 				// Add training data to kNN, without last element
 				kNN trainkNN = kNN.initialiseKNN(NUMBER_OF_NEIGHBOURS, dataMatrixReduced, dimensionsQuantity, testElementsCount);
@@ -121,19 +138,29 @@ namespace Flags
 					Console.WriteLine("This instance is classified as: {0} , actual value: {1}", result, actualValue);
 				}
 
+				accurancy = 1 / dimensionsQuantity * 100; /* priskirti klasifikatoriaus tiksluma*/
+				xy.Add(new Tuple<double,double>(dimensionsQuantity, accurancy));
 				dimensionsQuantity--;
 				//Console.WriteLine("Reduced Data matrix: \n\r" +  dataMatrixReduced.ToString());
 
 				Console.WriteLine("////////////////////////////////////////////////////");
 			}
+			DrawChart(xy);
 			Console.ReadKey();
 		}
 
+		/*Draw accurancy chart*/
+		static void DrawChart(List<Tuple<double, double>> xy)
+		{
+			Application.EnableVisualStyles();
+			Application.SetCompatibleTextRenderingDefault(false);
+			Application.Run(new Form1(xy));
+		}
 
 		/*Get dimensions reduced matrix*/
-		static Matrix<double> GetReducedMatrix(Matrix<double> dataMatrixNormalized, int dimensionsQuantity, Dictionary<double, double> sortedByMostReflectAttributes)
+		static Matrix<double> GetReducedMatrix(Matrix<double> dataMatrixNormalized, double dimensionsQuantity, Dictionary<double, double> sortedByMostReflectAttributes)
 		{
-			Matrix<double> dataMatrixReduced = Matrix<double>.Build.Dense(dataMatrixNormalized.RowCount, dimensionsQuantity+1);
+			Matrix<double> dataMatrixReduced = Matrix<double>.Build.Dense(dataMatrixNormalized.RowCount,(int) dimensionsQuantity+1);
 			int counter = 1;
 			dataMatrixReduced.SetColumn(0, dataMatrixNormalized.Column(22));
 			Console.ForegroundColor = ConsoleColor.Green;
@@ -266,6 +293,22 @@ namespace Flags
 				else
 				{
 					arr[22] = "0";
+				}
+				foreach (KeyValuePair<double, double> kvp in Attr3AreaGroups) /*group area*/
+				{
+					if (double.Parse(arr[3]) > kvp.Value)
+					{
+						arr[3] = kvp.Key.ToString();
+						break;
+					}
+				}
+				foreach (KeyValuePair<double, double> kvp in Attr4PopulationGroups) /*group population*/
+				{
+					if (double.Parse(arr[4]) > kvp.Value)
+					{
+						arr[4] = kvp.Key.ToString();
+						break;
+					}
 				}
 				dataMatrix.SetRow(countryCounter, Array.ConvertAll(arr, double.Parse)); /*parse from string to to int array and add to matrix row*/
 				countryCounter++;
