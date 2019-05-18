@@ -109,65 +109,59 @@ namespace Flags
 			List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
 
 			double dimensionsQuantity = dataMatrixNormalized.ColumnCount-1; /* experiments for clasificator*/
-			double accuracy = 0;
-			double correct = 0;
-			double tested = 0;
-
+			double accuracyCross = 0;
 			while (dimensionsQuantity>1)
 			{
 				Matrix<double> dataMatrixReduced = GetReducedMatrix(dataMatrixNormalized, dimensionsQuantity, sortedByMostReflectAttributes);
 				int testElementsCount = dataMatrixReduced.RowCount / NUMBER_OF_SEGMENTS;
 				// Cross-Validation
-				accuracy = 0;
+				accuracyCross = 0;
 				for (int iterationID = 0; iterationID < NUMBER_OF_SEGMENTS; iterationID++)
 				{
-					correct = 0;
-					tested = 0;
-					Console.WriteLine("/////////////////////////////////////////////");
-					Console.WriteLine("Iteration: {0}, Number of Arguments: {1}", iterationID + 1, dimensionsQuantity);
-					
-					// Add training data to kNN, without last element
-					kNN trainkNN = kNN.initialiseKNN(NUMBER_OF_NEIGHBOURS, dataMatrixReduced, (int)dimensionsQuantity, testElementsCount, iterationID);
-
-					// Get testing data and sunStar values
-					double[][] allItems = dataMatrixReduced.ToRowArrays();
-					
-					for(int i = iterationID * testElementsCount; i < (iterationID + 1) * testElementsCount; i++)
-					{
-						List<double> testingSet = allItems[i].ToList();
-						double actualValue = (int)testingSet[0];
-						testingSet.RemoveAt(0);
-
-						// Test that element
-						string result = trainkNN.Classify(testingSet);
-						if (double.Parse(result) == actualValue)
-						{
-							correct++;
-						}
-						tested++;
-					}
-
-					// Skaiciuoja kiekvienos iteracijos tiksluma
-					double tempAccuracy = correct / tested * 100;
-
-					// Didziausias visu iteraciju tikslumas
-					if (tempAccuracy > accuracy)
-						accuracy = tempAccuracy;
-
-					Console.WriteLine("Accuracy of this iteration: {0}", tempAccuracy);
-					Console.WriteLine("/////////////////////////////////////////////");
+					// Skaiciuoja kiekvienos iteracijos tiksluma kNN metodu
+					double accuracykNN = Accuracy(dataMatrixReduced, iterationID, testElementsCount, (int)dimensionsQuantity);
+					accuracyCross += accuracykNN;
 				}
-
-				// Paduoda didziausia tiksluma is visu kryzmines patikros iteraciju
-				xy.Add(new Tuple<double, double>(dimensionsQuantity, accuracy));
+				accuracyCross = accuracyCross / NUMBER_OF_SEGMENTS;
+				// pridedam visos kryzmines patikros tiksluma
+				xy.Add(new Tuple<double, double>(dimensionsQuantity, accuracyCross));
 				dimensionsQuantity--;
-
-				correct = 0;
-				tested = 0;
 			}
 
 			DrawChart(xy);
 			Console.ReadKey();
+		}
+
+		/*Acurracy: quantity of Correct/ quantity of all Tested results %*/
+		private static double Accuracy(Matrix<double> dataMatrixReduced, int iterationID, int testElementsCount, int dimensionsQuantity)
+		{
+			double correct = 0;
+			double tested = 0;
+			Console.WriteLine("/////////////////////////////////////////////");
+			Console.WriteLine("Iteration: {0}, Number of Arguments: {1}", iterationID + 1, dimensionsQuantity);
+			// Add training data to kNN, without last element
+			kNN trainkNN = kNN.initialiseKNN(NUMBER_OF_NEIGHBOURS, dataMatrixReduced, (int)dimensionsQuantity, testElementsCount, iterationID);
+
+			// Get testing data and sunStar values
+			double[][] allItems = dataMatrixReduced.ToRowArrays();
+			for (int i = iterationID * testElementsCount; i < (iterationID + 1) * testElementsCount; i++)
+			{
+				List<double> testingSet = allItems[i].ToList();
+				double actualValue = (int)testingSet[0];
+				testingSet.RemoveAt(0);
+
+				// Test that element
+				string result = trainkNN.Classify(testingSet);
+				if (double.Parse(result) == actualValue)
+				{
+					correct++;
+				}
+				tested++;
+			}
+			double accuracy = correct / tested * 100;
+			Console.WriteLine("Accuracy of this iteration: {0}", accuracy);
+			Console.WriteLine("/////////////////////////////////////////////");
+			return accuracy;
 		}
 
 		/*Draw accuracy chart*/
