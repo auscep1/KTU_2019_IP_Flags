@@ -108,11 +108,13 @@ namespace Flags
 			/*experiments of clasificator starts:*/
 			List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
 			double dimensionsQuantity = dataMatrixNormalized.ColumnCount - 1; /* experiments for clasificator*/
-			int row = (int)NUMBER_OF_SEGMENTS+1;
-			int col = (int)dimensionsQuantity-1;
+			int row = (int)NUMBER_OF_SEGMENTS + 1;
+			int col = (int)dimensionsQuantity - 1;
 			double[,] matrixForChart = new double[col, row];
 			List<double> dimensions = new List<double>();
 			double accuracyCross = 0;
+
+			Console.WriteLine(String.Format("\t{0,-15}\t{1,-15}\t{2,-15}\t{3,-15}\t","METHOD", "ITERATION", "ATTRIBUTES", "ACCURACY"));
 			while (dimensionsQuantity > 1)
 			{
 				Matrix<double> dataMatrixReduced = GetReducedMatrix(dataMatrixNormalized, dimensionsQuantity, sortedByMostReflectAttributes);
@@ -144,8 +146,8 @@ namespace Flags
 		{
 			double correct = 0;
 			double tested = 0;
-			Console.WriteLine("/////////////////////////////////////////////");
-			Console.WriteLine("Iteration: {0}, Number of Arguments: {1}", iterationID + 1, dimensionsQuantity);
+			//Console.WriteLine("/////////////////////////////////////////////");
+		//	Console.WriteLine("Iteration: {0}, Number of Arguments: {1}", iterationID + 1, dimensionsQuantity);
 			// Add training data to kNN, without last element
 			kNN trainkNN = kNN.initialiseKNN(NUMBER_OF_NEIGHBOURS, dataMatrixReduced, (int)dimensionsQuantity, testElementsCount, iterationID);
 
@@ -166,7 +168,8 @@ namespace Flags
 				tested++;
 			}
 			double accuracy = correct / tested * 100;
-			Console.WriteLine("Accuracy of this iteration: {0}", accuracy);
+			//Console.WriteLine("Accuracy of this iteration: {0}", accuracy);
+			Console.WriteLine(String.Format("\t{3,-15}\t{0,-15}\t{1,-15}\t{2,-15:0.00}", iterationID + 1, dimensionsQuantity, accuracy, "kNN"));
 			return accuracy;
 		}
 
@@ -494,19 +497,19 @@ namespace Flags
 
 			return distance;
 		}
-        /// <summary>
-        /// Following three functions calculates distance between two points in a feature space, each based on different formulas.
-        /// </summary>
-        private void CalculateEucledianDistance(double[,] keyValue, double[] normalisedInstance, ref double[] distances, int i)
-        {
+		/// <summary>
+		/// Following three functions calculates distance between two points in a feature space, each based on different formulas.
+		/// </summary>
+		private void CalculateEucledianDistance(double[,] keyValue, double[] normalisedInstance, ref double[] distances, int i)
+		{
 			distances[i] = Math.Sqrt(keyValue.Row(i).Zip(normalisedInstance, (one, two) => (one - two) * (one - two)).ToArray().Sum());
-        }
+		}
 
-        ///
-        private void CalculateChebychevDistance(double[,] keyValue, double[] normalisedInstance, ref double[] distances, int i)
-        {
+		///
+		private void CalculateChebychevDistance(double[,] keyValue, double[] normalisedInstance, ref double[] distances, int i)
+		{
 			distances[i] = keyValue.Row(i).Zip(normalisedInstance, (one, two) => (one - two)).ToArray().Max();
-        }
+		}
 
 		private void CalculateManhattanDistance(double[,] keyValue, double[] normalisedInstance, ref double[] distances, int i)
 		{
