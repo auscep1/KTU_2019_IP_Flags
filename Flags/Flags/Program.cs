@@ -493,7 +493,7 @@ namespace Flags
 			distance = A.Zip(B, (one, two) => (Math.Pow((one - two), 2)) / two).ToArray().Sum();
 
 			return distance;
-
+		}
         /// <summary>
         /// Following three functions calculates distance between two points in a feature space, each based on different formulas.
         /// </summary>
