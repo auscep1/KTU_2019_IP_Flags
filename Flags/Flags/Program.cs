@@ -74,10 +74,10 @@ namespace Flags
 		};
 		/*group population attribute values*/
 		static Dictionary<double, double> Attr4PopulationGroups = new Dictionary<double, double> {
-			{3,1000}, /*>10000*/
-			{2,100}, /*1000-10000*/
-			{1,10}, /*100-1000*/
-			{0,0} /*0-100*/
+			{3,1000}, /*>1000*/
+			{2,100}, /*100-1000*/
+			{1,10}, /*10-100*/
+			{0,0} /*0-10*/
 		};
 
 		static void Main(string[] args)
