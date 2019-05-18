@@ -34,10 +34,53 @@ namespace WindowsFormsApp1
 				Fx.Points[index].MarkerSize = 8;
 				Fx.Points[index].MarkerColor = Color.Red;
 				Fx.Points[index].Label = "#VALY{#.##}" + " % ";
-				//Fx.Points[index].AxisLabel = "#VAL \n #PERCENT";
 				index++;
 			}
 			Fx.BorderWidth = 3;
+		}
+
+		Series[] Fxarr;
+		public Form1(double[,] XY, List<double> xAxis)
+		{
+			xAxis.Sort();
+			Fxarr = new Series[XY.GetLength(1)];
+			InitializeComponent();
+			ClearForm();
+			PreparareForm(0, 30, 0, 100);
+			Fxarr[XY.GetLength(1) - 1] = chart1.Series.Add("Kryžminės patikros tikslumas");
+			Fxarr[XY.GetLength(1) - 1].ChartType = SeriesChartType.Line;
+			//Fxarr[XY.GetLength(1) - 1].IsValueShownAsLabel = true;
+			for (int i = 0; i < XY.GetLength(1) - 1; i++)
+			{
+				Fxarr[i] = chart1.Series.Add("Iteracija " + (i + 1));
+				Fxarr[i].ChartType = SeriesChartType.Line;
+				//	Fxarr[i].IsValueShownAsLabel = true;
+			}
+			int index = 0;
+			chart1.Titles.Add("Klasifikatoriaus tikslumas, kai iteracijų " + (XY.GetLength(1) - 1)).Font = new System.Drawing.Font("Arial", 16, FontStyle.Bold);
+			for (int c = 0; c < XY.GetLength(0); c++)
+			{
+				for (int r = 0; r < XY.GetLength(1); r++)
+				{
+					Fxarr[r].Points.AddXY(xAxis[c], XY[c, r]);
+					//Fxarr[r].Points[index].MarkerStyle = MarkerStyle.Circle;
+					//Fxarr[r].Points[index].MarkerSize = 8;
+					//Fxarr[r].Points[index].MarkerColor = Color.Red;
+					//if (r == XY.GetLength(1) - 1)
+					//	Fxarr[r].Points[index].Label = "#VALY{#.##}" + " % ";
+				}
+				index++;
+			}
+			for (int i = 0; i < XY.GetLength(1); i++)
+			{
+				if (i == XY.GetLength(1) - 1)
+				{
+					Fxarr[i].Color = Color.Red;
+					Fxarr[i].BorderWidth = 4;
+				}
+				else Fxarr[i].BorderWidth = 2;
+
+			}
 		}
 
 		private void Form1_Load(object sender, EventArgs e)

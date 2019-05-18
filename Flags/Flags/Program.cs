@@ -87,7 +87,7 @@ namespace Flags
 			{1,10}, /*10-100*/
 			{0,0} /*0-10*/
 		};
-
+		[STAThread]
 		static void Main(string[] args)
 		{
 			string flagData = GetDataFromWeb();
@@ -107,10 +107,13 @@ namespace Flags
 			/*sortedByMostReflectAttributes key should be used for attributes selecion*/
 			/*experiments of clasificator starts:*/
 			List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
-
-			double dimensionsQuantity = dataMatrixNormalized.ColumnCount-1; /* experiments for clasificator*/
+			double dimensionsQuantity = dataMatrixNormalized.ColumnCount - 1; /* experiments for clasificator*/
+			int row = (int)NUMBER_OF_SEGMENTS+1;
+			int col = (int)dimensionsQuantity-1;
+			double[,] matrixForChart = new double[col, row];
+			List<double> dimensions = new List<double>();
 			double accuracyCross = 0;
-			while (dimensionsQuantity>1)
+			while (dimensionsQuantity > 1)
 			{
 				Matrix<double> dataMatrixReduced = GetReducedMatrix(dataMatrixNormalized, dimensionsQuantity, sortedByMostReflectAttributes);
 				int testElementsCount = dataMatrixReduced.RowCount / NUMBER_OF_SEGMENTS;
@@ -121,14 +124,18 @@ namespace Flags
 					// Skaiciuoja kiekvienos iteracijos tiksluma kNN metodu
 					double accuracykNN = Accuracy(dataMatrixReduced, iterationID, testElementsCount, (int)dimensionsQuantity);
 					accuracyCross += accuracykNN;
+					matrixForChart[(int)dimensionsQuantity - 2, iterationID] = accuracykNN;
 				}
 				accuracyCross = accuracyCross / NUMBER_OF_SEGMENTS;
 				// pridedam visos kryzmines patikros tiksluma
 				xy.Add(new Tuple<double, double>(dimensionsQuantity, accuracyCross));
+				dimensions.Add(dimensionsQuantity);
+				matrixForChart[(int)dimensionsQuantity - 2, row - 1] = accuracyCross;
 				dimensionsQuantity--;
 			}
 
 			DrawChart(xy);
+			DrawChart(matrixForChart, dimensions);
 			Console.ReadKey();
 		}
 
@@ -160,7 +167,6 @@ namespace Flags
 			}
 			double accuracy = correct / tested * 100;
 			Console.WriteLine("Accuracy of this iteration: {0}", accuracy);
-			Console.WriteLine("/////////////////////////////////////////////");
 			return accuracy;
 		}
 
@@ -171,21 +177,28 @@ namespace Flags
 			Application.SetCompatibleTextRenderingDefault(false);
 			Application.Run(new Form1(xy));
 		}
+		/*Draw accuracy chart*/
+		static void DrawChart(double[,] matrixForChart, List<double> dimensions)
+		{
+			//Application.EnableVisualStyles();
+			//Application.SetCompatibleTextRenderingDefault(false);
+			Application.Run(new Form1(matrixForChart, dimensions));
+		}
 
 		/*Get dimensions reduced matrix*/
 		static Matrix<double> GetReducedMatrix(Matrix<double> dataMatrixNormalized, double dimensionsQuantity, Dictionary<double, double> sortedByMostReflectAttributes)
 		{
-			Matrix<double> dataMatrixReduced = Matrix<double>.Build.Dense(dataMatrixNormalized.RowCount,(int) dimensionsQuantity+1);
+			Matrix<double> dataMatrixReduced = Matrix<double>.Build.Dense(dataMatrixNormalized.RowCount, (int)dimensionsQuantity + 1);
 			int counter = 1;
 			dataMatrixReduced.SetColumn(0, dataMatrixNormalized.Column(22));
 			Console.ForegroundColor = ConsoleColor.Green;
 			Console.Write("Attributes in use: ");
 			foreach (KeyValuePair<double, double> kvp in sortedByMostReflectAttributes)
 			{
-				Console.Write("\t" + kvp.Key+"-"+ Attributes[kvp.Key]);
+				Console.Write("\t" + kvp.Key + "-" + Attributes[kvp.Key]);
 				dataMatrixReduced.SetColumn(counter, dataMatrixNormalized.Column((int)kvp.Key));
 				counter++;
-				if (counter >= dimensionsQuantity+1)
+				if (counter >= dimensionsQuantity + 1)
 					break;
 			}
 			Console.Write("\n\r");
@@ -201,7 +214,7 @@ namespace Flags
 			{
 				covarianceSunStarSortedAbs.Add(kvp.Key, Math.Abs(covarianceSunStarSorted[kvp.Key]));
 			}
-			covarianceSunStarSortedAbs= covarianceSunStarSortedAbs.OrderByDescending(x => x.Value).ToDictionary(pair => pair.Key, pair => pair.Value);
+			covarianceSunStarSortedAbs = covarianceSunStarSortedAbs.OrderByDescending(x => x.Value).ToDictionary(pair => pair.Key, pair => pair.Value);
 			//var sortedDict = (from x in covarianceSunStarSortedAbs orderby x.Value descending select x).ToDictionary(pair => pair.Key, pair => pair.Value);
 			return covarianceSunStarSortedAbs;
 		}
@@ -390,13 +403,13 @@ namespace Flags
 			double[] distances = new double[depth];
 
 			Dictionary<double, string> distDictionary = new Dictionary<double, string>();
-			Random rnd = new Random() ;
+			Random rnd = new Random();
 
 			for (int i = 0; i < depth; i++)
 			{
 				distances[i] = CalculateEucledianDistance(keyValue.Row(i), normalisedInstance);
 				//distances[i] += depth * 0.000001 * rnd.NextDouble();
-				if(!distDictionary.ContainsKey(distances[i]))
+				if (!distDictionary.ContainsKey(distances[i]))
 					distDictionary.Add(distances[i], dataSet.Values.ToArray()[i].ToString());
 			}
 
@@ -426,7 +439,7 @@ namespace Flags
 			if (allItems != null)
 			{
 				// For the first part of the training data (0 - testDataStart)
-				for (int i = 0 ; i < startID * testCount; i++)
+				for (int i = 0; i < startID * testCount; i++)
 				{
 					List<double> temp = allItems[i].ToList();
 					temp.RemoveAt(0);
@@ -439,48 +452,48 @@ namespace Flags
 				{
 					List<double> temp = allItems[i].ToList();
 					temp.RemoveAt(0);
-					if(temp.Count == length)
+					if (temp.Count == length)
 						dataSet.Add(temp, (int)allItems[i][0]);
 				}
 			}
 			else
 				Console.WriteLine("No items in the data set");
-		
+
 		}
 
-        /// <summary>
-        /// Following three functions calculates distance between two points in a feature space, each based on different formulas.
-        /// </summary>
-        private double CalculateEucledianDistance(double[] A, double[] B)
-        {
-            double distance;
+		/// <summary>
+		/// Following three functions calculates distance between two points in a feature space, each based on different formulas.
+		/// </summary>
+		private double CalculateEucledianDistance(double[] A, double[] B)
+		{
+			double distance;
 
-            distance = CalculateMinkowskyDistance(A, B, 2);
+			distance = CalculateMinkowskyDistance(A, B, 2);
 
-            return distance;
-        }
+			return distance;
+		}
 
-        /// <param name="LpNorm"> If set as 1 or 2 it corresponds to Manhattan and Eucledian formulas </param>
-        private double CalculateMinkowskyDistance(double[] A, double[] B, double LpNorm)
-        {
-            double distance;
+		/// <param name="LpNorm"> If set as 1 or 2 it corresponds to Manhattan and Eucledian formulas </param>
+		private double CalculateMinkowskyDistance(double[] A, double[] B, double LpNorm)
+		{
+			double distance;
 
-            distance = Math.Pow(A.Zip(B, (one, two) => Math.Pow((one - two), LpNorm)).ToArray().Sum(), 1/LpNorm);
+			distance = Math.Pow(A.Zip(B, (one, two) => Math.Pow((one - two), LpNorm)).ToArray().Sum(), 1 / LpNorm);
 
-            return distance;
-        }
+			return distance;
+		}
 
-        private double CalculateChiSqDistance(double[] A, double[] B)
-        {
-            double distance;
+		private double CalculateChiSqDistance(double[] A, double[] B)
+		{
+			double distance;
 
-            distance = A.Zip(B, (one, two) => (Math.Pow((one - two), 2)) / two).ToArray().Sum();
+			distance = A.Zip(B, (one, two) => (Math.Pow((one - two), 2)) / two).ToArray().Sum();
 
-            return distance;
-        }
+			return distance;
+		}
 
-        //private members
-        private Dictionary<List<double>, int> dataSet = new Dictionary<List<double>, int>();
+		//private members
+		private Dictionary<List<double>, int> dataSet = new Dictionary<List<double>, int>();
 		//private List<double> trainingSet = new List<double>();
 		private int k = 3;
 		private int length = 0;
