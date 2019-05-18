@@ -15,11 +15,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using MathNet.Numerics.LinearAlgebra;
-using MathNet.Numerics.LinearAlgebra.Double;
 
 namespace Flags
 {
@@ -68,6 +65,20 @@ namespace Flags
 			{28, "topleft"},
 			{29, "botright"}
 		};
+		/*group area attribute values*/
+		static Dictionary<double, double> Attr3AreaGroups = new Dictionary<double, double> {
+			{3,10000}, /*>10000*/
+			{2,1000}, /*1000-10000*/
+			{1,100}, /*100-1000*/
+			{0,0} /*0-100*/
+		};
+		/*group population attribute values*/
+		static Dictionary<double, double> Attr4PopulationGroups = new Dictionary<double, double> {
+			{3,1000}, /*>10000*/
+			{2,100}, /*1000-10000*/
+			{1,10}, /*100-1000*/
+			{0,0} /*0-100*/
+		};
 
 		static void Main(string[] args)
 		{
@@ -88,7 +99,8 @@ namespace Flags
 			/*sortedByMostReflectAttributes key should be used for attributes selecion*/
 			/*experiments of clasificator starts:*/
 			int dimensionsQuantity = dataMatrixNormalized.ColumnCount-1; /* experiments for clasificator*/
-			while(dimensionsQuantity>1)
+
+			while (dimensionsQuantity>1)
 			{
 				Matrix<double> dataMatrixReduced = GetReducedMatrix(dataMatrixNormalized, dimensionsQuantity, sortedByMostReflectAttributes);
 				
@@ -236,6 +248,22 @@ namespace Flags
 				else
 				{
 					arr[22] = "0";
+				}
+				foreach (KeyValuePair<double, double> kvp in Attr3AreaGroups) /*group area*/
+				{
+					if (double.Parse(arr[3]) > kvp.Value)
+					{
+						arr[3] = kvp.Key.ToString();
+						break;
+					}
+				}
+				foreach (KeyValuePair<double, double> kvp in Attr4PopulationGroups) /*group population*/
+				{
+					if (double.Parse(arr[4]) > kvp.Value)
+					{
+						arr[4] = kvp.Key.ToString();
+						break;
+					}
 				}
 				dataMatrix.SetRow(countryCounter, Array.ConvertAll(arr, double.Parse)); /*parse from string to to int array and add to matrix row*/
 				countryCounter++;
