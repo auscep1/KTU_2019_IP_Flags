@@ -17,6 +17,8 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using MathNet.Numerics.LinearAlgebra;
+using WindowsFormsApp1;
+using System.Windows.Forms;
 
 namespace Flags
 {
@@ -65,14 +67,14 @@ namespace Flags
 			{28, "topleft"},
 			{29, "botright"}
 		};
-		/*group area attribute values*/
+		/*group a area attribute values*/
 		static Dictionary<double, double> Attr3AreaGroups = new Dictionary<double, double> {
 			{3,10000}, /*>10000*/
 			{2,1000}, /*1000-10000*/
 			{1,100}, /*100-1000*/
 			{0,0} /*0-100*/
 		};
-		/*group population attribute values*/
+		/*group a population attribute values*/
 		static Dictionary<double, double> Attr4PopulationGroups = new Dictionary<double, double> {
 			{3,1000}, /*>1000*/
 			{2,100}, /*100-1000*/
@@ -98,24 +100,37 @@ namespace Flags
 
 			/*sortedByMostReflectAttributes key should be used for attributes selecion*/
 			/*experiments of clasificator starts:*/
-			int dimensionsQuantity = dataMatrixNormalized.ColumnCount-1; /* experiments for clasificator*/
+			List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
 
+			double dimensionsQuantity = dataMatrixNormalized.ColumnCount-1; /* experiments for clasificator*/
+			double accurancy = 0;
 			while (dimensionsQuantity>1)
 			{
 				Matrix<double> dataMatrixReduced = GetReducedMatrix(dataMatrixNormalized, dimensionsQuantity, sortedByMostReflectAttributes);
-				
+
 				/*clasifikatorius, experimentai, kryzmine patikra...*/
 
+				accurancy = 1 / dimensionsQuantity * 100; /* priskirti klasifikatoriaus tiksluma*/
+				xy.Add(new Tuple<double,double>(dimensionsQuantity, accurancy));
 				dimensionsQuantity--;
 				Console.WriteLine("Reduced Data matrix: \n\r" +  dataMatrixReduced.ToString());
 			}
+			DrawChart(xy);
 			Console.ReadKey();
 		}
 
-		/*Get dimensions reduced matrix*/
-		static Matrix<double> GetReducedMatrix(Matrix<double> dataMatrixNormalized, int dimensionsQuantity, Dictionary<double, double> sortedByMostReflectAttributes)
+		/*Draw accurancy chart*/
+		static void DrawChart(List<Tuple<double, double>> xy)
 		{
-			Matrix<double> dataMatrixReduced = Matrix<double>.Build.Dense(dataMatrixNormalized.RowCount, dimensionsQuantity+1);
+			Application.EnableVisualStyles();
+			Application.SetCompatibleTextRenderingDefault(false);
+			Application.Run(new Form1(xy));
+		}
+
+		/*Get dimensions reduced matrix*/
+		static Matrix<double> GetReducedMatrix(Matrix<double> dataMatrixNormalized, double dimensionsQuantity, Dictionary<double, double> sortedByMostReflectAttributes)
+		{
+			Matrix<double> dataMatrixReduced = Matrix<double>.Build.Dense(dataMatrixNormalized.RowCount,(int) dimensionsQuantity+1);
 			int counter = 1;
 			dataMatrixReduced.SetColumn(0, dataMatrixNormalized.Column(22));
 			Console.ForegroundColor = ConsoleColor.Green;
