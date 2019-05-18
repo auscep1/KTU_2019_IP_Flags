@@ -394,9 +394,11 @@ namespace Flags
 
 			for (int i = 0; i < depth; i++)
 			{
-				distances[i] = CalculateEucledianDistance(keyValue.Row(i), normalisedInstance);
+				CalculateEucledianDistance(keyValue, normalisedInstance, ref distances, i);
+				//CalculateChebychevDistance(keyValue, normalisedInstance, ref distances, i);
+				//CalculateManhattanDistance(keyValue, normalisedInstance, ref distances, i);
 				//distances[i] += depth * 0.000001 * rnd.NextDouble();
-				if(!distDictionary.ContainsKey(distances[i]))
+				if (!distDictionary.ContainsKey(distances[i]))
 					distDictionary.Add(distances[i], dataSet.Values.ToArray()[i].ToString());
 			}
 
@@ -451,36 +453,24 @@ namespace Flags
         /// <summary>
         /// Following three functions calculates distance between two points in a feature space, each based on different formulas.
         /// </summary>
-        private double CalculateEucledianDistance(double[] A, double[] B)
+        private void CalculateEucledianDistance(double[,] keyValue, double[] normalisedInstance, ref double[] distances, int i)
         {
-            double distance;
-
-            distance = CalculateMinkowskyDistance(A, B, 2);
-
-            return distance;
+			distances[i] = Math.Sqrt(keyValue.Row(i).Zip(normalisedInstance, (one, two) => (one - two) * (one - two)).ToArray().Sum());
         }
 
-        /// <param name="LpNorm"> If set as 1 or 2 it corresponds to Manhattan and Eucledian formulas </param>
-        private double CalculateMinkowskyDistance(double[] A, double[] B, double LpNorm)
+        ///
+        private void CalculateChebychevDistance(double[,] keyValue, double[] normalisedInstance, ref double[] distances, int i)
         {
-            double distance;
-
-            distance = Math.Pow(A.Zip(B, (one, two) => Math.Pow((one - two), LpNorm)).ToArray().Sum(), 1/LpNorm);
-
-            return distance;
+			distances[i] = keyValue.Row(i).Zip(normalisedInstance, (one, two) => (one - two)).ToArray().Max();
         }
 
-        private double CalculateChiSqDistance(double[] A, double[] B)
-        {
-            double distance;
+		private void CalculateManhattanDistance(double[,] keyValue, double[] normalisedInstance, ref double[] distances, int i)
+		{
+			distances[i] = keyValue.Row(i).Zip(normalisedInstance, (one, two) => Math.Abs((one - two))).ToArray().Sum();
+		}
 
-            distance = A.Zip(B, (one, two) => (Math.Pow((one - two), 2)) / two).ToArray().Sum();
-
-            return distance;
-        }
-
-        //private members
-        private Dictionary<List<double>, int> dataSet = new Dictionary<List<double>, int>();
+		//private members
+		private Dictionary<List<double>, int> dataSet = new Dictionary<List<double>, int>();
 		//private List<double> trainingSet = new List<double>();
 		private int k = 3;
 		private int length = 0;
