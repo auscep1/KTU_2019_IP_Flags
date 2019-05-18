@@ -407,7 +407,9 @@ namespace Flags
 
 			for (int i = 0; i < depth; i++)
 			{
-				distances[i] = CalculateEucledianDistance(keyValue.Row(i), normalisedInstance);
+				CalculateEucledianDistance(keyValue, normalisedInstance, ref distances, i);
+				//CalculateChebychevDistance(keyValue, normalisedInstance, ref distances, i);
+				//CalculateManhattanDistance(keyValue, normalisedInstance, ref distances, i);
 				//distances[i] += depth * 0.000001 * rnd.NextDouble();
 				if (!distDictionary.ContainsKey(distances[i]))
 					distDictionary.Add(distances[i], dataSet.Values.ToArray()[i].ToString());
@@ -461,6 +463,7 @@ namespace Flags
 
 		}
 
+
 		/// <summary>
 		/// Following three functions calculates distance between two points in a feature space, each based on different formulas.
 		/// </summary>
@@ -490,6 +493,25 @@ namespace Flags
 			distance = A.Zip(B, (one, two) => (Math.Pow((one - two), 2)) / two).ToArray().Sum();
 
 			return distance;
+
+        /// <summary>
+        /// Following three functions calculates distance between two points in a feature space, each based on different formulas.
+        /// </summary>
+        private void CalculateEucledianDistance(double[,] keyValue, double[] normalisedInstance, ref double[] distances, int i)
+        {
+			distances[i] = Math.Sqrt(keyValue.Row(i).Zip(normalisedInstance, (one, two) => (one - two) * (one - two)).ToArray().Sum());
+        }
+
+        ///
+        private void CalculateChebychevDistance(double[,] keyValue, double[] normalisedInstance, ref double[] distances, int i)
+        {
+			distances[i] = keyValue.Row(i).Zip(normalisedInstance, (one, two) => (one - two)).ToArray().Max();
+        }
+
+		private void CalculateManhattanDistance(double[,] keyValue, double[] normalisedInstance, ref double[] distances, int i)
+		{
+			distances[i] = keyValue.Row(i).Zip(normalisedInstance, (one, two) => Math.Abs((one - two))).ToArray().Sum();
+
 		}
 
 		//private members
