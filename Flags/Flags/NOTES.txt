@@ -21,6 +21,13 @@
 5. Data min-max nimalization:
 	https://t4tutorials.com/min-max-normalization-of-data-in-data-mining/
 
+5. Data min-max nimalization:
+	https://t4tutorials.com/min-max-normalization-of-data-in-data-mining/
+
+6. kNN:
+	https://codefying.com/2015/03/03/k-nearest-neighbor-classifier/?fbclid=IwAR2mqaQcGN0bmEAdlStx2TlgtX3gOmv3VvTxL7S2S5uPkeca1lEuoGd_Vw4
+	https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4978658/?fbclid=IwAR39SErTHtUFMj2IdSyLgsPj-yQGYkhSh3CtXiMUsZU8atOpKTxCJFDc_7s
+
 
 
 
