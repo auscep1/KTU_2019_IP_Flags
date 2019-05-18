@@ -84,6 +84,41 @@ namespace WindowsFormsApp1
 			}
 		}
 
+		Series[] all;
+		public Form1(double[,] XY, List<double> xAxis, string [] methods, int iterations)
+		{
+			xAxis.Sort();
+			all = new Series[XY.GetLength(1)];
+			InitializeComponent();
+			ClearForm();
+			PreparareForm(0, 30, 0, 100);
+			for (int i = 0; i < methods.Length; i++)
+			{
+				all[i] = chart1.Series.Add(methods[i]);
+				all[i].ChartType = SeriesChartType.Line;
+			}
+			int index = 0;
+			chart1.Titles.Add("Klasifikatoriaus tikslumas metodams, kai iteracijų " + iterations).Font = new System.Drawing.Font("Arial", 16, FontStyle.Bold);
+			for (int c = 0; c < XY.GetLength(0); c++)
+			{
+				for (int r = 0; r < XY.GetLength(1); r++)
+				{
+					all[r].Points.AddXY(xAxis[c], XY[c, r]);
+				}
+				index++;
+			}
+			for (int i = 0; i < XY.GetLength(1); i++)
+			{
+				if (i == 3)
+				{
+					all[i].Color = Color.Red;
+					all[i].BorderWidth = 4;
+				}
+				else all[i].BorderWidth = 2;
+
+			}
+		}
+
 		private void Form1_Load(object sender, EventArgs e)
 		{
 

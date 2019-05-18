@@ -107,20 +107,25 @@ namespace Flags
 			Console.WriteLine("Covariance of Sunstar sorted attribute: \n\r" + String.Join("\n\r ", covarianceSunStarSorted));
 			Console.WriteLine("Covariance of Sunstar sorted by most reflected attributes: \n\r" + String.Join("\n\r ", sortedByMostReflectAttributes));
 
-			List<Tuple<double, double, double>> bestResultskNN = new List<Tuple<double, double, double>>();
+			List<Tuple<string, double, double, double>> bestResults = new List<Tuple<string, double, double, double>>();
 			/*sortedByMostReflectAttributes key should be used for attributes selecion*/
 			/*experiments of clasificator starts:*/
 			while (NUMBER_OF_SEGMENTS < 26)
 			{
-				List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
+				List<Tuple<double, double>> kNN_chart = new List<Tuple<double, double>>();
 				double dimensionsQuantity = dataMatrixNormalized.ColumnCount - 1; /* experiments for clasificator*/
 				int row = (int)NUMBER_OF_SEGMENTS + 1;
 				int col = (int)dimensionsQuantity - 1;
-				double[,] matrixForChart = new double[col, row];
+				double[,] kNN_matrixForChart = new double[col, row];
+				double[,] matrixForChartAllMethods = new double[col, 4];
 				List<double> dimensions = new List<double>();
 				double accuracyCross = 0;
-				double bestAccuracy = 0;
-				double bestQuantityOfAttributes = 0;
+				double kNN_bestAccuracy = 0;
+				double kNN_bestQuantityOfAttributes = 0;
+				//double m2_bestAccuracy = 0; //metodas 2
+				//double m2_bestQuantityOfAttributes = 0; //metodas 2
+				//double m3_bestAccuracy = 0; //metodas 3
+				//double m3_bestQuantityOfAttributes = 0; //metodas3
 				Console.WriteLine(String.Format("\t{0,-15}\t{1,-15}\t{2,-15}\t{3,-15}\t{4,-15}\t", "SEGMENT" + NUMBER_OF_SEGMENTS, "METHOD", "ITERATION", "ATTRIBUTES", "ACCURACY"));
 
 				while (dimensionsQuantity > 1)
@@ -135,49 +140,54 @@ namespace Flags
 						// Skaiciuoja kiekvienos iteracijos tiksluma kNN metodu
 						double accuracykNN = AccuracykNN(dataMatrixReduced, iterationID, testElementsCount, (int)dimensionsQuantity);
 						accuracyCross += accuracykNN;
-						matrixForChart[(int)dimensionsQuantity - 2, iterationID] = accuracykNN;
+						kNN_matrixForChart[(int)dimensionsQuantity - 2, iterationID] = accuracykNN;
 					}
 					accuracyCross = accuracyCross / NUMBER_OF_SEGMENTS;
-					if (bestAccuracy <= accuracyCross)
+					if (kNN_bestAccuracy <= accuracyCross)
 					{
-						bestAccuracy = accuracyCross;
-						bestQuantityOfAttributes = dimensionsQuantity;
+						kNN_bestAccuracy = accuracyCross;
+						kNN_bestQuantityOfAttributes = dimensionsQuantity;
 					}
 					// pridedam visos kryzmines patikros tiksluma
-					xy.Add(new Tuple<double, double>(dimensionsQuantity, accuracyCross));
+					kNN_chart.Add(new Tuple<double, double>(dimensionsQuantity, accuracyCross));
 					dimensions.Add(dimensionsQuantity);
-					matrixForChart[(int)dimensionsQuantity - 2, row - 1] = accuracyCross;
+					kNN_matrixForChart[(int)dimensionsQuantity - 2, row - 1] = accuracyCross;
+					matrixForChartAllMethods[(int)dimensionsQuantity - 2, 0] = accuracyCross; //kNN netodas pridedamas
 					dimensionsQuantity--;
 				}
-				bestResultskNN.Add(new Tuple<double, double, double>(NUMBER_OF_SEGMENTS, bestQuantityOfAttributes, bestAccuracy));
+				/*bestResults reikia prideti ir kitus naudotus metodus*/
+				bestResults.Add(new Tuple<string, double, double, double>("kNN", NUMBER_OF_SEGMENTS, kNN_bestQuantityOfAttributes, kNN_bestAccuracy));
 
-				DrawChart(xy);
-				DrawChart(matrixForChart, dimensions);
+				DrawChart(kNN_chart);
+				DrawChart(kNN_matrixForChart, dimensions);
+				DrawChartMethods(matrixForChartAllMethods, dimensions);
 				NUMBER_OF_SEGMENTS += 5;
 			}
-			Bests(bestResultskNN);
+			Bests(bestResults);
 			Console.ReadKey();
 		}
 
 		/*Print best results*/
-		private static void Bests(List<Tuple<double, double, double>> bestResults)
+		private static void Bests(List<Tuple<string, double, double, double>> bestResults)
 		{
 			Console.ForegroundColor = ConsoleColor.Yellow;
 			Console.WriteLine("Best results:");
-			Console.WriteLine("\t{0,-15}\t{1,-15}\t{2,-15:0.00}\t", "SEGMENT", "ATTRIBUTES", "ACCURACY");
+			Console.WriteLine("\t{0,-15}\t{1,-15}\t{2,-15}\t{3,-15:0.00}\t", "METHOD", "SEGMENT", "ATTRIBUTES", "ACCURACY");
+			string bestMethod = "";
 			double bestSegment = 0, bestAttributes = 0, bestAcuracy = 0;
-			foreach (Tuple<double, double, double> t in bestResults)
+			foreach (Tuple<string, double, double, double> t in bestResults)
 			{
-				Console.WriteLine("\t{0,-15}\t{1,-15}\t{2,-15:0.00}\t", t.Item1, t.Item2, t.Item3);
-				if (bestAcuracy < t.Item3)
+				Console.WriteLine("\t{0,-15}\t{1,-15}\t{2,-15}\t{3,-15:0.00}\t", t.Item1, t.Item2, t.Item3, t.Item4);
+				if (bestAcuracy < t.Item4)
 				{
-					bestSegment = t.Item1;
-					bestAttributes = t.Item2;
-					bestAcuracy = t.Item3;
+					bestMethod = t.Item1;
+					bestSegment = t.Item2;
+					bestAttributes = t.Item3;
+					bestAcuracy = t.Item4;
 				}
 			}
 			Console.ForegroundColor = ConsoleColor.Magenta;
-			Console.WriteLine("The best\n\r\t{0,-15}\t{1,-15}\t{2,-15:0.00}\t", bestSegment, bestAttributes, bestAcuracy);
+			Console.WriteLine("The best\n\r\t{0,-15}\t{1,-15}\t{2,-15}\t{3,-15:0.00}\t", bestMethod, bestSegment, bestAttributes, bestAcuracy);
 			Console.ForegroundColor = ConsoleColor.White;
 		}
 
@@ -217,6 +227,12 @@ namespace Flags
 		static void DrawChart(double[,] matrixForChart, List<double> dimensions)
 		{
 			Application.Run(new Form1(matrixForChart, dimensions));
+		}
+		/*Draw accuracy chart*/
+		private static void DrawChartMethods(double[,] matrixForChartAllMethods, List<double> dimensions)
+		{
+			string[] methods = {"kNN", "m2", "m3", "nubalsuotas"};
+			Application.Run(new Form1(matrixForChartAllMethods, dimensions, methods, NUMBER_OF_SEGMENTS));
 		}
 
 		/*Get dimensions reduced matrix*/
