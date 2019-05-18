@@ -109,55 +109,68 @@ namespace Flags
 			List<Tuple<double, double>> xy = new List<Tuple<double, double>>();
 
 			double dimensionsQuantity = dataMatrixNormalized.ColumnCount-1; /* experiments for clasificator*/
-			double accurancy = 0;
+			double accuracy = 0;
 			double correct = 0;
 			double tested = 0;
+
 			while (dimensionsQuantity>1)
 			{
 				Matrix<double> dataMatrixReduced = GetReducedMatrix(dataMatrixNormalized, dimensionsQuantity, sortedByMostReflectAttributes);
+				int testElementsCount = dataMatrixReduced.RowCount / NUMBER_OF_SEGMENTS;
+				// Cross-Validation
+				accuracy = 0;
+				for (int iterationID = 0; iterationID < NUMBER_OF_SEGMENTS; iterationID++)
+				{
+					correct = 0;
+					tested = 0;
+					Console.WriteLine("/////////////////////////////////////////////");
+					Console.WriteLine("Iteration: {0}, Number of Arguments: {1}", iterationID + 1, dimensionsQuantity);
+					
+					// Add training data to kNN, without last element
+					kNN trainkNN = kNN.initialiseKNN(NUMBER_OF_NEIGHBOURS, dataMatrixReduced, (int)dimensionsQuantity, testElementsCount, iterationID);
 
-				Console.WriteLine("////////////////////////////////////////////////////");
-				int testElementsCount = 10;
-
-				/*clasifikatorius, experimentai, kryzmine patikra...*/
-				// Add training data to kNN, without last element
-				kNN trainkNN = kNN.initialiseKNN(NUMBER_OF_NEIGHBOURS, dataMatrixReduced,(int) dimensionsQuantity, testElementsCount);
-
-				// Get last element of the array and its sunStar value
-				double[][] allItems = dataMatrixReduced.ToRowArrays();
-				List<double> trainingSet = new List<double>();
-				for (int i = 1; i <= testElementsCount; i++)
-				{ 
-					// Get training element
-					trainingSet = allItems[allItems.Length - i].ToList();
-					int actualValue = (int)trainingSet[0];
-					trainingSet.RemoveAt(0);
-
-					// Test that element
-					string result = trainkNN.Classify(trainingSet);
-					if (double.Parse(result) == actualValue)
+					// Get testing data and sunStar values
+					double[][] allItems = dataMatrixReduced.ToRowArrays();
+					
+					for(int i = iterationID * testElementsCount; i < (iterationID + 1) * testElementsCount; i++)
 					{
-						correct++;
+						List<double> testingSet = allItems[i].ToList();
+						double actualValue = (int)testingSet[0];
+						testingSet.RemoveAt(0);
+
+						// Test that element
+						string result = trainkNN.Classify(testingSet);
+						if (double.Parse(result) == actualValue)
+						{
+							correct++;
+						}
+						tested++;
 					}
-					tested++;
-					// Result
-					Console.WriteLine("This instance is classified as: {0} , actual value: {1}", result, actualValue);
+
+					// Skaiciuoja kiekvienos iteracijos tiksluma
+					double tempAccuracy = correct / tested * 100;
+
+					// Didziausias visu iteraciju tikslumas
+					if (tempAccuracy > accuracy)
+						accuracy = tempAccuracy;
+
+					Console.WriteLine("Accuracy of this iteration: {0}", tempAccuracy);
+					Console.WriteLine("/////////////////////////////////////////////");
 				}
 
-				accurancy = correct/tested * 100; /* priskirti klasifikatoriaus tiksluma*/
-				xy.Add(new Tuple<double,double>(dimensionsQuantity, accurancy));
+				// Paduoda didziausia tiksluma is visu kryzmines patikros iteraciju
+				xy.Add(new Tuple<double, double>(dimensionsQuantity, accuracy));
 				dimensionsQuantity--;
-				//Console.WriteLine("Reduced Data matrix: \n\r" +  dataMatrixReduced.ToString());
 
-				Console.WriteLine("////////////////////////////////////////////////////");
 				correct = 0;
 				tested = 0;
 			}
+
 			DrawChart(xy);
 			Console.ReadKey();
 		}
 
-		/*Draw accurancy chart*/
+		/*Draw accuracy chart*/
 		static void DrawChart(List<Tuple<double, double>> xy)
 		{
 			Application.EnableVisualStyles();
@@ -342,22 +355,17 @@ namespace Flags
 	public sealed class kNN
 	{
 		//private constructor allows to ensure k is odd
-		private kNN(int K, Matrix<double> data, int argumentsNumber, int testCount)
+		private kNN(int K, Matrix<double> data, int argumentsNumber, int testCount, int startID)
 		{
 			k = K;
-			PopulateDataSetFromGivenData(data, argumentsNumber, testCount);
+			PopulateDataSetFromGivenData(data, argumentsNumber, testCount, startID);
 		}
 
-		/// <summary>
-		/// Initialises the kNN class, the observations data set and the number of neighbors to use in voting when classifying
-		/// </summary>
-		/// <param name="K">integer representiong the number of neighbors to use in the classifying instances</param>
-		/// <param name="FileName">string file name containing knows numeric observations with string classes</param>
-		/// <param name="Normalise">boolean flag for normalising the data set</param>
-		public static kNN initialiseKNN(int K, Matrix<double> data, int argumentsNumber, int testCount)
+		/// Initialises the kNN class
+		public static kNN initialiseKNN(int K, Matrix<double> data, int argumentsNumber, int testCount, int startID)
 		{
 			if (K % 2 > 0)
-				return new kNN(K, data, argumentsNumber, testCount);
+				return new kNN(K, data, argumentsNumber, testCount, startID);
 			else
 			{
 				Console.WriteLine("K must be odd.");
@@ -388,9 +396,12 @@ namespace Flags
 			double[] distances = new double[depth];
 
 			Dictionary<double, string> distDictionary = new Dictionary<double, string>();
+			Random rnd = new Random() ;
+
 			for (int i = 0; i < depth; i++)
 			{
 				distances[i] = Math.Sqrt(keyValue.Row(i).Zip(normalisedInstance, (one, two) => (one - two) * (one - two)).ToArray().Sum());
+				//distances[i] += depth * 0.000001 * rnd.NextDouble();
 				if(!distDictionary.ContainsKey(distances[i]))
 					distDictionary.Add(distances[i], dataSet.Values.ToArray()[i].ToString());
 			}
@@ -412,7 +423,7 @@ namespace Flags
 		/// <summary>
 		/// Processess the  training data and populates the dictionary
 		/// </summary>
-		private void PopulateDataSetFromGivenData(Matrix<double> data, int argumentsNumber, int testCount)
+		private void PopulateDataSetFromGivenData(Matrix<double> data, int argumentsNumber, int testCount, int startID)
 		{
 			double[][] allItems = data.ToRowArrays();
 			depth = allItems.Length - testCount;
@@ -420,7 +431,17 @@ namespace Flags
 
 			if (allItems != null)
 			{
-				for (int i = 0; i < allItems.Length-testCount; i++)
+				// For the first part of the training data (0 - testDataStart)
+				for (int i = 0 ; i < startID * testCount; i++)
+				{
+					List<double> temp = allItems[i].ToList();
+					temp.RemoveAt(0);
+					if (temp.Count == length)
+						dataSet.Add(temp, (int)allItems[i][0]);
+				}
+
+				// For the second part of the training data (testDataEnd - MaxLength)
+				for (int i = (startID + 1) * testCount; i < allItems.Length; i++)
 				{
 					List<double> temp = allItems[i].ToList();
 					temp.RemoveAt(0);
