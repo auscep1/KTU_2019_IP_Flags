@@ -193,7 +193,7 @@ namespace Flags
 			return dataMatrixReduced;
 		}
 
-		/*Get soreted by most reflect to sunset attributes: Return dictionary <real index of attribute , sorted probabilities>*/
+		/*Get sorted by most reflect to sunset attributes: Return dictionary <real index of attribute , sorted probabilities>*/
 		static Dictionary<double, double> SortedByMostReflectAttributes(Dictionary<double, double> covarianceSunStarSorted)
 		{
 			Dictionary<double, double> covarianceSunStarSortedAbs = new Dictionary<double, double>(); //nuokrypis
@@ -206,7 +206,7 @@ namespace Flags
 			return covarianceSunStarSortedAbs;
 		}
 
-		/*Get soreted by most reflect to sunset attributes: Return dictionary <real index of attribute , sorted probabilities>*/
+		/*Get sorted by most reflect to sunset attributes: Return dictionary <real index of attribute , sorted probabilities>*/
 		static Dictionary<double, double> SortedSunsetCovariation(Matrix<double> covarianceMatrix)
 		{
 			Dictionary<double, double> covarianceSunStarSorted = new Dictionary<double, double>();
@@ -394,7 +394,7 @@ namespace Flags
 
 			for (int i = 0; i < depth; i++)
 			{
-				distances[i] = Math.Sqrt(keyValue.Row(i).Zip(normalisedInstance, (one, two) => (one - two) * (one - two)).ToArray().Sum());
+				distances[i] = CalculateEucledianDistance(keyValue.Row(i), normalisedInstance);
 				//distances[i] += depth * 0.000001 * rnd.NextDouble();
 				if(!distDictionary.ContainsKey(distances[i]))
 					distDictionary.Add(distances[i], dataSet.Values.ToArray()[i].ToString());
@@ -448,9 +448,39 @@ namespace Flags
 		
 		}
 
+        /// <summary>
+        /// Following three functions calculates distance between two points in a feature space, each based on different formulas.
+        /// </summary>
+        private double CalculateEucledianDistance(double[] A, double[] B)
+        {
+            double distance;
 
-		//private members
-		private Dictionary<List<double>, int> dataSet = new Dictionary<List<double>, int>();
+            distance = CalculateMinkowskyDistance(A, B, 2);
+
+            return distance;
+        }
+
+        /// <param name="LpNorm"> If set as 1 or 2 it corresponds to Manhattan and Eucledian formulas </param>
+        private double CalculateMinkowskyDistance(double[] A, double[] B, double LpNorm)
+        {
+            double distance;
+
+            distance = Math.Pow(A.Zip(B, (one, two) => Math.Pow((one - two), LpNorm)).ToArray().Sum(), 1/LpNorm);
+
+            return distance;
+        }
+
+        private double CalculateChiSqDistance(double[] A, double[] B)
+        {
+            double distance;
+
+            distance = A.Zip(B, (one, two) => (Math.Pow((one - two), 2)) / two).ToArray().Sum();
+
+            return distance;
+        }
+
+        //private members
+        private Dictionary<List<double>, int> dataSet = new Dictionary<List<double>, int>();
 		//private List<double> trainingSet = new List<double>();
 		private int k = 3;
 		private int length = 0;
