@@ -206,7 +206,7 @@ namespace Flags
 				double actualValue = (int)testingSet[0];
 				testingSet.RemoveAt(0);
 				// Test that element
-				string result = trainkNN.Classify(testingSet);
+				string result = trainkNN.ClassifyWithVoting(testingSet);
 				if (double.Parse(result) == actualValue)
 				{
 					correct++;
@@ -434,55 +434,80 @@ namespace Flags
 		internal int K { get { return k; } }
 		internal Dictionary<List<double>, int> DataSet { get { return dataSet; } }
 
-		/// <summary>
-		/// Classifies the instance according to a kNN algorithm
-		/// calculates Eucledian distance between the instance and the know data
-		/// </summary>
-		internal string Classify(List<double> instance)
-		{
-			double[] normalisedInstance = new double[length];
-			normalisedInstance = instance.ToArray<double>();
+        /// <summary>
+        /// Classifies the instance according to a kNN algorithm
+        /// calculates Eucledian distance between the instance and the know data
+        /// </summary>
+        internal string Classify(List<double> instance, int whichFormula = 0)
+        {
+            double[] normalisedInstance = new double[length];
+            normalisedInstance = instance.ToArray<double>();
 
-			if (instance.Count != length)
-			{
-				Console.WriteLine("Length: " + length);
-				return "Wrong number of instance parameters. Instance count: " + instance.Count.ToString();
-			}
+            if (instance.Count != length)
+            {
+                Console.WriteLine("Length: " + length);
+                return "Wrong number of instance parameters. Instance count: " + instance.Count.ToString();
+            }
 
-			double[,] keyValue = dataSet.Keys.ToMatrix(depth, length);
-			double[] distances = new double[depth];
+            double[,] keyValue = dataSet.Keys.ToMatrix(depth, length);
+            double[] distances = new double[depth];
 
-			Dictionary<double, string> distDictionary = new Dictionary<double, string>();
-			Random rnd = new Random();
+            Dictionary<double, string> distDictionary = new Dictionary<double, string>();
+            Random rnd = new Random();
 
-			for (int i = 0; i < depth; i++)
-			{
-				CalculateEucledianDistance(keyValue, normalisedInstance, ref distances, i);
-				//CalculateChebychevDistance(keyValue, normalisedInstance, ref distances, i);
-				//CalculateManhattanDistance(keyValue, normalisedInstance, ref distances, i);
-				//distances[i] += depth * 0.000001 * rnd.NextDouble();
-				if (!distDictionary.ContainsKey(distances[i]))
-					distDictionary.Add(distances[i], dataSet.Values.ToArray()[i].ToString());
-			}
+            for (int i = 0; i < depth; i++)
+            {
+                switch (whichFormula)
+                {
+                    case 0:
+                        CalculateEucledianDistance(keyValue, normalisedInstance, ref distances, i);
+                        break;
+                    case 1:
+                        CalculateChebychevDistance(keyValue, normalisedInstance, ref distances, i);
+                        break;
+                    case 2:
+                        CalculateManhattanDistance(keyValue, normalisedInstance, ref distances, i);
+                        break;
+                }
 
-			//select top votes
-			var topK = (from d in distDictionary.Keys
-						orderby d ascending
-						select d).Take(k).ToArray();
+                //distances[i] += depth * 0.000001 * rnd.NextDouble();
+                if (!distDictionary.ContainsKey(distances[i]))
+                    distDictionary.Add(distances[i], dataSet.Values.ToArray()[i].ToString());
+            }
 
-			//obtain the corresponding classifications for the top votes
-			var result = (from d in distDictionary
-						  from t in topK
-						  where d.Key == t
-						  select d.Value).ToArray();
+            //select top votes
+            var topK = (from d in distDictionary.Keys
+                        orderby d ascending
+                        select d).Take(k).ToArray();
 
-			return result.Majority();
-		}
+            //obtain the corresponding classifications for the top votes
+            var result = (from d in distDictionary
+                          from t in topK
+                          where d.Key == t
+                          select d.Value).ToArray();
 
-		/// <summary>
-		/// Processess the  training data and populates the dictionary
-		/// </summary>
-		private void PopulateDataSetFromGivenData(Matrix<double> data, int argumentsNumber, int testCount, int startID)
+            return result.Majority();
+        }
+        
+        /// <summary>
+        /// Classifies with voting system, which uses all different formulas for calculating distance
+        /// </summary>
+        internal string ClassifyWithVoting(List<double> instance)
+        {
+            var result = new string[3];
+
+            for (int i = 0; i < 3; i++)
+            {
+                result[i] = Classify(instance, i);
+            }
+
+            return result.Majority();
+        }
+
+        /// <summary>
+        /// Processess the  training data and populates the dictionary
+        /// </summary>
+        private void PopulateDataSetFromGivenData(Matrix<double> data, int argumentsNumber, int testCount, int startID)
 		{
 			double[][] allItems = data.ToRowArrays();
 			depth = allItems.Length - testCount;
